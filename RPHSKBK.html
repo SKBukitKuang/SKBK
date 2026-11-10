@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem eRPH & Jadual Waktu - SK Bukit Kuang</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .bg-custom-image {
+            background-image: url('BGSKBK.JPG');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .bg-card-overlay {
+            background-color: rgba(15, 23, 42, 0.90);
+        }
+        .bg-overlay {
+            background-color: rgba(0, 0, 0, 0.75);
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        .btn-anim {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-anim:hover {
+            transform: translateY(-2px) scale(1.01);
+            filter: brightness(1.1);
+        }
+        .btn-anim:active {
+            transform: translateY(0px) scale(0.99);
+        }
+        .fade-in {
+            animation: fadeInAnim 0.35s ease-in-out forwards;
+        }
+        @keyframes fadeInAnim {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0px); }
+        }
+        #overlay-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(-20px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #overlay-notification.show {
+            transform: translateY(0px);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease;
+        }
+        #loading-overlay.hidden-loading {
+            opacity: 0;
+            pointer-events: none;
+        }
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-area { background: white !important; color: black !important; box-shadow: none !important; border: none !important; width: 100% !important; }
+        }
+    </style>
+</head>
+<body class="bg-custom-image min-h-screen text-slate-100 flex flex-col justify-between font-sans antialiased">
+    <div class="fixed inset-0 bg-overlay -z-10"></div>
+
+    <!-- LOADING OVERLAY BUFFERING -->
+    <div id="loading-overlay" class="hidden-loading">
+        <div class="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-white font-bold text-sm tracking-wider" id="loading-text">Sedang Menyegerakan Data Google Sheet...</p>
+    </div>
+
+    <div id="overlay-notification" class="flex items-center space-x-3 px-4 py-3 rounded-xl shadow-2xl border text-xs sm:text-sm font-bold">
+        <i id="overlay-icon" class="fa-solid fa-circle-check text-lg"></i>
+        <span id="overlay-text">Mesej Notifikasi</span>
+    </div>
+
+    <!-- MAIN MENU / LOGIN INTERFACE -->
+    <div id="main-menu-section" class="flex-grow flex items-center justify-center p-4">
+        <div class="relative w-full max-w-md rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col items-center p-6 sm:p-8 text-center">
+            
+            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover -z-10">
+                <source src="VideoSKBK.mp4" type="video/mp4">
+                Pelayar anda tidak menyokong paparan video.
+            </video>
+            <div class="absolute inset-0 bg-slate-950/85 -z-10"></div>
+
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-amber-400 bg-white flex items-center justify-center shadow-xl mb-3 flex-shrink-0">
+                <img src="LogoSKBK.JPG" alt="Logo SKBK" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/100?text=SKBK'">
+            </div>
+
+            <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-1">SISTEM PENGURUSAN GURU</span>
+            <h1 class="text-lg sm:text-xl font-bold text-white mb-1">SK Bukit Kuang, Kemaman</h1>
+            <p id="auth-subtitle" class="text-slate-300 text-xs sm:text-sm mb-4">Sila log masuk untuk meneruskan.</p>
+
+            <div id="login-form-box" class="w-full space-y-3 text-left text-xs sm:text-sm mb-4">
+                <div>
+                    <label class="block font-semibold text-slate-200 mb-1">USERNAME</label>
+                    <input type="text" id="login-username" placeholder="Masukkan username anda" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-amber-400 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-200 mb-1">PASSWORD</label>
+                    <input type="password" id="login-password" placeholder="Masukkan password" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-amber-400 outline-none">
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-slate-300">
+                        <input type="checkbox" id="login-remember" class="w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400 cursor-pointer">
+                        <span>Ingat Saya</span>
+                    </label>
+                </div>
+                <button type="button" onclick="prosesLogin()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black p-3.5 rounded-xl transition shadow-lg cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim">
+                    <span>LOG MASUK</span>
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                </button>
+                <div class="text-center pt-2">
+                    <span class="text-slate-400 text-xs">Belum ada akaun? </span>
+                    <button type="button" onclick="tukarKeDaftar()" class="text-amber-400 hover:underline font-bold text-xs cursor-pointer">Daftar Akaun Baru</button>
+                </div>
+            </div>
+
+            <div id="register-form-box" class="w-full space-y-3 text-left text-xs sm:text-sm mb-4 hidden">
+                <div>
+                    <label class="block font-semibold text-slate-200 mb-1">NAMA PENUH</label>
+                    <input type="text" id="reg-nama" placeholder="Cth: Cikgu Ahmad" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-white uppercase font-bold focus:ring-2 focus:ring-amber-400 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-200 mb-1">USERNAME</label>
+                    <input type="text" id="reg-username" placeholder="Cth: cikguahmad" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-amber-400 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-200 mb-1">PASSWORD</label>
+                    <input type="password" id="reg-password" placeholder="Cipta password" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-amber-400 outline-none">
+                </div>
+                <button type="button" onclick="prosesDaftar()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black p-3.5 rounded-xl transition shadow-lg cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim">
+                    <span>DAFTAR AKAUN</span>
+                    <i class="fa-solid fa-user-plus"></i>
+                </button>
+                <div class="text-center pt-2">
+                    <span class="text-slate-400 text-xs">Sudah ada akaun? </span>
+                    <button type="button" onclick="tukarKeLogin()" class="text-amber-400 hover:underline font-bold text-xs cursor-pointer">Log Masuk Di Sini</button>
+                </div>
+            </div>
+
+            <div class="text-[11px] sm:text-xs text-slate-400 border-t border-slate-700/60 pt-3 w-full">
+                Dibangunkan oleh <span class="font-bold text-amber-400">Cortex SKBK Team</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SUB MENU SECTION -->
+    <div id="sub-menu-section" class="flex-grow flex items-center justify-center p-4 hidden">
+        <div class="relative w-full max-w-lg rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col items-center p-6 sm:p-8 text-center fade-in">
+            
+            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover -z-10">
+                <source src="VideoSKBK.mp4" type="video/mp4">
+                Pelayar anda tidak menyokong paparan video.
+            </video>
+            <div class="absolute inset-0 bg-slate-950/85 -z-10"></div>
+
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-amber-400 bg-white flex items-center justify-center shadow-xl mb-3 flex-shrink-0">
+                <img src="LogoSKBK.JPG" alt="Logo SKBK" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/100?text=SKBK'">
+            </div>
+
+            <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-1">MENU UTAMA GURU</span>
+            <h1 id="welcome-user-title" class="text-lg sm:text-xl font-bold text-white mb-1">Selamat Datang, Cikgu</h1>
+            <p class="text-slate-300 text-xs sm:text-sm mb-6">Sila pilih modul yang ingin anda akses di bawah.</p>
+
+            <div class="w-full space-y-4 mb-6">
+                <button type="button" onclick="bukaJadualWaktu()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold p-4 rounded-xl transition shadow-lg cursor-pointer flex items-center justify-between text-sm sm:text-base border border-blue-500/40 btn-anim">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 text-lg">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-black">Jadual Waktu Guru</div>
+                            <div class="text-xs text-slate-300 font-normal">Jadual Matriks Grid Penuh (07:45 - 13:15)</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                </button>
+
+                <button type="button" onclick="bukaPilihHariERPH()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black p-4 rounded-xl transition shadow-lg cursor-pointer flex items-center justify-between text-sm sm:text-base btn-anim">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-slate-950/10 flex items-center justify-center text-slate-950 text-lg">
+                            <i class="fa-solid fa-book-open-reader"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-black">eRPH Guru</div>
+                            <div class="text-xs text-slate-800 font-normal">Pilih Hari (Ahad - Khamis) untuk Penjanaan RPH</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-950"></i>
+                </button>
+            </div>
+
+            <button type="button" onclick="logKeluar()" class="text-red-400 hover:text-red-300 text-xs font-semibold flex items-center space-x-1 cursor-pointer btn-anim">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Log Keluar Akaun</span>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- SUB MENU PEMILIHAN HARI eRPH -->
+    <div id="erph-day-selector-section" class="flex-grow flex items-center justify-center p-4 hidden">
+        <div class="relative w-full max-w-lg rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col items-center p-6 sm:p-8 text-center fade-in">
+            
+            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover -z-10">
+                <source src="VideoSKBK.mp4" type="video/mp4">
+                Pelayar anda tidak menyokong paparan video.
+            </video>
+            <div class="absolute inset-0 bg-slate-950/85 -z-10"></div>
+
+            <div class="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-400 text-2xl mb-3">
+                <i class="fa-solid fa-calendar-week"></i>
+            </div>
+
+            <span class="px-3 py-1 text-xs font-bold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 mb-1">MODUL eRPH</span>
+            <h2 class="text-lg sm:text-xl font-bold text-white mb-1">Sila Pilih Hari Mengajar</h2>
+            <p class="text-slate-300 text-xs sm:text-sm mb-6">Pilih salah satu hari di bawah untuk membuka paparan eRPH berserta data jadual berkaitan:</p>
+
+            <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <button type="button" onclick="pilihHariRPHAction('Ahad')" class="bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 text-white font-bold p-3.5 rounded-xl transition shadow cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim">
+                    <i class="fa-solid fa-calendar-day text-amber-400"></i>
+                    <span>HARI AHAD</span>
+                </button>
+                <button type="button" onclick="pilihHariRPHAction('Isnin')" class="bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 text-white font-bold p-3.5 rounded-xl transition shadow cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim">
+                    <i class="fa-solid fa-calendar-day text-amber-400"></i>
+                    <span>HARI ISNIN</span>
+                </button>
+                <button type="button" onclick="pilihHariRPHAction('Selasa')" class="bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 text-white font-bold p-3.5 rounded-xl transition shadow cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim">
+                    <i class="fa-solid fa-calendar-day text-amber-400"></i>
+                    <span>HARI SELASA</span>
+                </button>
+                <button type="button" onclick="pilihHariRPHAction('Rabu')" class="bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 text-white font-bold p-3.5 rounded-xl transition shadow cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim">
+                    <i class="fa-solid fa-calendar-day text-amber-400"></i>
+                    <span>HARI RABU</span>
+                </button>
+                <button type="button" onclick="pilihHariRPHAction('Khamis')" class="bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 text-white font-bold p-3.5 rounded-xl transition shadow cursor-pointer flex items-center justify-center space-x-2 text-sm btn-anim sm:col-span-2">
+                    <i class="fa-solid fa-calendar-day text-amber-400"></i>
+                    <span>HARI KHAMIS</span>
+                </button>
+            </div>
+
+            <button type="button" onclick="kembaliKeSubMenu()" class="text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-1 cursor-pointer btn-anim">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Kembali ke Menu Utama</span>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- JADUAL WAKTU SECTION -->
+    <div id="jadual-section" class="flex-grow flex p-2 sm:p-4 hidden">
+        <div class="w-full max-w-7xl mx-auto bg-slate-900/95 rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col p-4 sm:p-6 space-y-4 fade-in">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full overflow-hidden border border-amber-400 bg-white flex items-center justify-center">
+                        <img src="LogoSKBK.JPG" alt="Logo SKBK" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-white text-sm sm:text-base">Pengurusan Jadual Waktu Mengajar (Matriks Grid)</h2>
+                        <p class="text-xs text-slate-400">SK Bukit Kuang, Kemaman &bull; Sesi 07:45 AM - 01:15 PM</p>
+                    </div>
+                </div>
+                <button type="button" onclick="kembaliKeSubMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-600 text-xs font-medium transition flex items-center space-x-2 cursor-pointer btn-anim">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Kembali ke Menu</span>
+                </button>
+            </div>
+
+            <div class="bg-slate-950/90 p-4 rounded-xl border border-slate-800 space-y-3">
+                <h3 class="font-bold text-amber-400 text-xs uppercase tracking-wide flex items-center">
+                    <i class="fa-solid fa-circle-plus mr-2"></i>Tambah Slot Jadual Waktu Mengajar
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 text-xs">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">HARI</label>
+                        <select id="input-j-hari" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                            <option value="Ahad">Ahad</option>
+                            <option value="Isnin">Isnin</option>
+                            <option value="Selasa">Selasa</option>
+                            <option value="Rabu">Rabu</option>
+                            <option value="Khamis">Khamis</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">MASA MULA</label>
+                        <select id="input-j-mula" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                            <option value="07:45">07:45 AM</option>
+                            <option value="08:15">08:15 AM</option>
+                            <option value="08:45">08:45 AM</option>
+                            <option value="09:15">09:15 AM</option>
+                            <option value="09:45">09:45 AM</option>
+                            <option value="10:15">10:15 AM</option>
+                            <option value="10:45">10:45 AM</option>
+                            <option value="11:15">11:15 AM</option>
+                            <option value="11:45">11:45 AM</option>
+                            <option value="12:15">12:15 PM</option>
+                            <option value="12:45">12:45 PM</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">MASA TAMAT</label>
+                        <select id="input-j-tamat" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                            <option value="08:15">08:15 AM</option>
+                            <option value="08:45">08:45 AM</option>
+                            <option value="09:15">09:15 AM</option>
+                            <option value="09:45">09:45 AM</option>
+                            <option value="10:15">10:15 AM</option>
+                            <option value="10:45">10:45 AM</option>
+                            <option value="11:15">11:15 AM</option>
+                            <option value="11:45">11:45 AM</option>
+                            <option value="12:15">12:15 PM</option>
+                            <option value="12:45">12:45 PM</option>
+                            <option value="13:15" selected>01:15 PM</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">SUBJEK</label>
+                        <select id="input-j-subjek" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                            <option value="Bahasa Melayu">Bahasa Melayu</option>
+                            <option value="Bahasa Inggeris">Bahasa Inggeris</option>
+                            <option value="Matematik">Matematik</option>
+                            <option value="Sains" selected>Sains</option>
+                            <option value="Pendidikan Islam">Pendidikan Islam</option>
+                            <option value="Pendidikan Moral">Pendidikan Moral</option>
+                            <option value="Sejarah">Sejarah</option>
+                            <option value="Pendidikan Jasmani & Kesihatan">Pendidikan Jasmani & Kesihatan</option>
+                            <option value="Pendidikan Seni Visual">Pendidikan Seni Visual</option>
+                            <option value="Pendidikan Muzik">Pendidikan Muzik</option>
+                            <option value="Reka Bentuk & Teknologi (RBT)">Reka Bentuk & Teknologi (RBT)</option>
+                            <option value="Bahasa Arab">Bahasa Arab</option>
+                            <option value="PPKI - Pengurusan Kehidupan">PPKI - Pengurusan Kehidupan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">KELAS</label>
+                        <select id="input-j-kelas" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                            <option value="Daisy">Daisy</option>
+                            <option value="Iris">Iris</option>
+                            <option value="Jasmine">Jasmine</option>
+                            <option value="Lily" selected>Lily</option>
+                            <option value="Orchid">Orchid</option>
+                            <option value="Tulip">Tulip</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">TAHUN</label>
+                        <select id="input-j-tahun" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3" selected>3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-1">
+                    <button type="button" onclick="tambahSlotJadual()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl transition cursor-pointer flex items-center space-x-2 text-xs btn-anim">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Tambah ke Jadual</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-300 text-xs text-slate-900 shadow-xl overflow-x-auto">
+                <div class="flex justify-between items-center font-bold text-slate-900 border-b border-slate-300 pb-2 mb-3">
+                    <span id="jadual-nama-guru">Guru: Cikgu</span>
+                    <span class="text-xs text-blue-800 font-bold bg-blue-100 px-2 py-0.5 rounded">Matriks Jadual Waktu Rasmi SKBK</span>
+                </div>
+
+                <table class="w-full border-collapse border border-slate-300 text-center text-slate-900 min-w-[800px]">
+                    <thead>
+                        <tr class="bg-slate-200 text-slate-900 font-bold text-[11px]">
+                            <th class="border border-slate-300 p-2 w-24">Hari / Masa</th>
+                            <th class="border border-slate-300 p-2">07:45 - 08:15</th>
+                            <th class="border border-slate-300 p-2">08:15 - 08:45</th>
+                            <th class="border border-slate-300 p-2">08:45 - 09:15</th>
+                            <th class="border border-slate-300 p-2">09:15 - 09:45</th>
+                            <th class="border border-slate-300 p-2">09:45 - 10:15</th>
+                            <th class="border border-slate-300 p-2">10:15 - 10:45</th>
+                            <th class="border border-slate-300 p-2">10:45 - 11:15</th>
+                            <th class="border border-slate-300 p-2">11:15 - 11:45</th>
+                            <th class="border border-slate-300 p-2">11:45 - 12:15</th>
+                            <th class="border border-slate-300 p-2">12:15 - 12:45</th>
+                            <th class="border border-slate-300 p-2">12:45 - 13:15</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-matriks-grid" class="text-[11px]">
+                        <!-- Diisi secara dinamik -->
+                    </tbody>
+                </table>
+
+                <div class="flex flex-wrap gap-3 pt-4 no-print">
+                    <button type="button" onclick="hantarJadualKeSistem()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-xl transition cursor-pointer flex items-center space-x-2 text-xs btn-anim">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Hantar Jadual ke Sistem (Sync eRPH)</span>
+                    </button>
+                    <button type="button" onclick="padamJadualSepenuhnya()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2.5 rounded-xl transition cursor-pointer flex items-center space-x-2 text-xs btn-anim">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Padam / Reset Semua Jadual</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RPH WORKSPACE SECTION (eRPH) -->
+    <div id="rph-workspace-section" class="flex-grow flex p-2 sm:p-4 hidden">
+        <div class="w-full max-w-7xl mx-auto bg-card-custom rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden flex flex-col">
+            <div class="bg-card-overlay p-4 sm:p-6 backdrop-blur-md space-y-6 flex-grow">
+                
+                <div class="no-print flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700 pb-4 gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-400 bg-white flex items-center justify-center shadow-md flex-shrink-0">
+                            <img src="LogoSKBK.JPG" alt="Logo SKBK" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/60?text=SKBK'">
+                        </div>
+                        <div>
+                            <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30" id="badge-erph-hari">MODUL eRPH</span>
+                            <h1 class="text-xl sm:text-2xl font-bold text-white mt-1">Penjana Rancangan Pengajaran Harian (RPH)</h1>
+                            <p class="text-slate-400 text-xs sm:text-sm">Terpaut Automatik dengan Jadual Waktu & Google Sheets</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 flex-wrap gap-2">
+                        <button type="button" onclick="muatTurunRPHPDF()" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center space-x-2 shadow cursor-pointer btn-anim">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Muat Turun PDF</span>
+                        </button>
+                        <button type="button" onclick="muatTurunRPHPNG()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center space-x-2 shadow cursor-pointer btn-anim">
+                            <i class="fa-solid fa-file-image"></i>
+                            <span>Muat Turun PNG</span>
+                        </button>
+                        <button type="button" onclick="resetDataERPH()" class="bg-red-700 hover:bg-red-600 text-white px-3 py-2 rounded-xl border border-red-500 text-xs sm:text-sm font-medium transition flex items-center space-x-2 cursor-pointer btn-anim" title="Reset/Padam pautan jadual eRPH">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Reset Data eRPH</span>
+                        </button>
+                        <button type="button" onclick="bukaPilihHariERPH()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-600 text-xs sm:text-sm font-medium transition flex items-center space-x-2 cursor-pointer btn-anim">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <span>Tukar Hari</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- UTAMA: 2 KOLUM -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- KELOMPOK KIRI: PANEL INPUT GURU -->
+                    <div class="no-print lg:col-span-5 bg-slate-900/95 p-4 sm:p-5 rounded-xl border border-slate-700 space-y-3 shadow-xl h-auto">
+                        <h3 class="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center py-1 justify-between">
+                            <span><i class="fa-solid fa-keyboard text-amber-400 mr-2"></i>Maklumat eRPH (Sync Google Sheet)</span>
+                        </h3>
+                        <div class="space-y-2.5 text-xs pb-2">
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">PILIH SLOT WAKTU (HARI INI)</label>
+                                <select id="select-slot-sync" onchange="pilihSlotJadualKeRPH()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-amber-400 font-bold cursor-pointer">
+                                    <option value="">-- Sila Pilih Slot Jadual --</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-semibold text-slate-300 mb-1">SUBJEK (Sync)</label>
+                                    <input type="text" id="input-mapel" readonly class="w-full bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-amber-300 font-bold cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-300 mb-1">KELAS (Sync)</label>
+                                    <input type="text" id="input-kelas-nama" readonly class="w-full bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-amber-300 font-bold cursor-not-allowed">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-semibold text-slate-300 mb-1">TAHUN (Sync)</label>
+                                    <input type="text" id="input-tahun" readonly class="w-full bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-amber-300 font-bold cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-300 mb-1">TARIKH</label>
+                                    <input type="date" id="input-tarikh" value="2026-10-15" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">MASA (Mula - Hingga)</label>
+                                <div class="flex items-center space-x-1">
+                                    <input type="time" id="input-masa-mula" value="10:45" readonly class="w-1/2 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-amber-300 text-center font-bold">
+                                    <span class="text-slate-400">hingga</span>
+                                    <input type="time" id="input-masa-tamat" value="11:15" readonly class="w-1/2 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-amber-300 text-center font-bold">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">BILANGAN MURID</label>
+                                <input type="number" id="input-bil-murid" value="38" min="1" max="50" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                            </div>
+                            
+                            <!-- PEMILIHAN TERUS TAJUK / SK / SP DARI GOOGLE SHEET -->
+                            <div>
+                                <label class="block font-semibold text-amber-400 mb-1">TAJUK</label>
+                                <select id="select-sheet-tajuk" onchange="pilihTajukDariSheet()" class="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-2 text-white font-bold cursor-pointer">
+                                    <option value="">-- Sila Pilih Tajuk --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-amber-400 mb-1">STANDARD KANDUNGAN</label>
+                                <select id="select-sheet-sk" onchange="pilihSKDariSheet()" class="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-2 text-white font-bold cursor-pointer">
+                                    <option value="">-- Sila Pilih Standard Kandungan --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-amber-400 mb-1">STANDARD PEMBELAJARAN</label>
+                                <select id="select-sheet-sp" onchange="pilihSPDariSheet()" class="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-2 text-white font-bold cursor-pointer">
+                                    <option value="">-- Sila Pilih Standard Pembelajaran --</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">OBJEKTIF PEMBELAJARAN</label>
+                                <textarea id="input-objektif" rows="2" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">Pada akhir PdP, murid dapat mencapai standard pembelajaran yang ditetapkan dengan baik.</textarea>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">KRITERIA KEJAYAAN</label>
+                                <textarea id="input-kk" rows="2" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">Murid berjaya sekiranya dapat menguasai kemahiran hari ini.</textarea>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">AKTIVITI (Ringkasan / Catatan Aktiviti PdP)</label>
+                                <textarea id="input-aktiviti" rows="2" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">Set Induksi: Perbincangan awal.
+Langkah 1: Penerangan konsep tajuk.
+Langkah 2: Latihan pengukuhan.
+Penutup: Rumusan pelajaran.</textarea>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">REFLEKSI</label>
+                                <textarea id="input-refleksi" rows="2" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">_____ / 38 orang murid mencapai objektif pembelajaran.</textarea>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">INTERVENSI</label>
+                                <textarea id="input-intervensi" rows="2" oninput="janaRPHPreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">Bimbingan khas diberikan kepada murid yang belum menguasai.</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KELOMPOK KANAN: DOKUMEN RPH RASMI & PANEL PROMPT AI -->
+                    <div class="lg:col-span-7 flex flex-col space-y-4">
+                        <div class="flex items-center justify-between px-1">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-eye mr-2"></i>Preview Langsung Dokumen RPH Rasmi
+                            </span>
+                            <span class="text-[11px] text-slate-400">Kemas kini langsung secara real-time</span>
+                        </div>
+                        
+                        <div id="print-area" class="print-area bg-white text-slate-900 p-5 sm:p-7 rounded-xl shadow-2xl border border-slate-300 space-y-4 text-xs sm:text-sm">
+                            
+                            <div class="flex items-center justify-between border-b-2 border-slate-800 pb-3">
+                                <div>
+                                    <h2 class="font-black text-xs sm:text-sm text-slate-900 leading-tight">SEKOLAH KEBANGSAAN BUKIT KUANG</h2>
+                                    <p class="text-[11px] text-slate-600">24000 Kemaman, Terengganu &bull; Rancangan Pengajaran Harian (RPH)</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="bg-blue-900 text-white text-[9px] font-bold px-2 py-0.5 rounded">KSSR SEMAKAN</span>
+                                    <p class="text-[11px] font-bold text-slate-700 mt-1" id="display-nama-guru">Guru: Cikgu</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <h3 class="font-bold text-[11px] uppercase bg-slate-200 text-slate-900 px-2.5 py-1 rounded border-l-4 border-blue-800">1. Maklumat Asas</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 px-1 text-xs">
+                                    <div><strong>SUBJEK:</strong> <span id="val-mapel">-</span></div>
+                                    <div><strong>KELAS:</strong> <span id="val-kelas">-</span></div>
+                                    <div><strong>TAHUN:</strong> <span id="val-tahun">-</span></div>
+                                    <div><strong>TARIKH:</strong> <span id="val-tarikh">-</span></div>
+                                    <div><strong>MASA:</strong> <span id="val-masa">-</span> <strong>HINGGA:</strong> <span id="val-hingga">-</span></div>
+                                    <div><strong>BILANGAN MURID:</strong> <span id="val-bil-murid">38</span> orang murid</div>
+                                    <div class="sm:col-span-2"><strong>TAJUK:</strong> <span id="val-tema">-</span></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <h3 class="font-bold text-[11px] uppercase bg-slate-200 text-slate-900 px-2.5 py-1 rounded border-l-4 border-blue-800">2. Fokus Kurikulum (DSKP & RPT)</h3>
+                                <div class="px-1 space-y-1 text-xs">
+                                    <div><strong>SK:</strong> <span id="val-sk">-</span></div>
+                                    <div><strong>SP:</strong> <span id="val-sp">-</span></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <h3 class="font-bold text-[11px] uppercase bg-slate-200 text-slate-900 px-2.5 py-1 rounded border-l-4 border-blue-800">3. Objektif Pembelajaran & Kriteria Kejayaan</h3>
+                                <div class="px-1 space-y-1.5 text-xs">
+                                    <div>
+                                        <strong>OBJEKTIF PEMBELAJARAN:</strong>
+                                        <div id="val-objektif" class="whitespace-pre-line text-slate-800 mt-0.5 pl-2">-</div>
+                                    </div>
+                                    <div>
+                                        <strong>KRITERIA KEJAYAAN:</strong>
+                                        <div id="val-kk" class="whitespace-pre-line text-slate-800 mt-0.5 pl-2">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <h3 class="font-bold text-[11px] uppercase bg-slate-200 text-slate-900 px-2.5 py-1 rounded border-l-4 border-blue-800">4. Aktiviti Pengajaran dan Pembelajaran</h3>
+                                <div class="px-1 text-xs">
+                                    <strong>AKTIVITI:</strong>
+                                    <div id="val-aktiviti" class="whitespace-pre-line text-slate-800 mt-1 bg-slate-50 p-2.5 rounded border border-slate-200">-</div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <h3 class="font-bold text-[11px] uppercase bg-slate-200 text-slate-900 px-2.5 py-1 rounded border-l-4 border-blue-800">5. Refleksi & Intervensi</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 px-1 text-xs">
+                                    <div class="border border-slate-300 p-2.5 rounded-lg bg-slate-50">
+                                        <strong>REFLEKSI:</strong>
+                                        <div id="val-refleksi" class="whitespace-pre-line text-slate-700 mt-1">-</div>
+                                    </div>
+                                    <div class="border border-slate-300 p-2.5 rounded-lg bg-slate-50">
+                                        <strong>INTERVENSI:</strong>
+                                        <div id="val-intervensi" class="whitespace-pre-line text-slate-700 mt-1">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- PANEL PROMPT AUTOMATIK AI -->
+                        <div class="no-print bg-slate-900/95 p-4 rounded-xl border border-slate-700 space-y-3 shadow-xl">
+                            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
+                                    <i class="fa-solid fa-robot mr-2"></i>Panel Prompt Automatik AI (Google Gemini)
+                                </span>
+                                <div class="flex items-center space-x-1.5 text-[11px]">
+                                    <span class="text-slate-400 font-semibold">Aras Soalan:</span>
+                                    <button type="button" onclick="setArasPrompt('sederhana')" id="btn-aras-sederhana" class="px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-amber-500 text-slate-950">Sederhana</button>
+                                    <button type="button" onclick="setArasPrompt('sukar')" id="btn-aras-sukar" class="px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-slate-800 text-slate-300 hover:bg-slate-700">Sukar (KBAT)</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-300 text-[11px] mb-1">PROMPT DIJANA AUTOMATIK:</label>
+                                <textarea id="ai-prompt-output" rows="4" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 text-xs font-mono resize-none focus:outline-none"></textarea>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2 pt-1">
+                                <button type="button" onclick="salinPromptAI()" class="flex-grow bg-slate-800 hover:bg-slate-700 text-white font-bold px-3.5 py-2.5 rounded-xl transition text-xs flex items-center justify-center space-x-2 cursor-pointer btn-anim border border-slate-600">
+                                    <i class="fa-solid fa-copy text-amber-400"></i>
+                                    <span>Salin Prompt</span>
+                                </button>
+                                <button type="button" onclick="hantarKeGeminiAI()" class="flex-grow bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3.5 py-2.5 rounded-xl transition text-xs flex items-center justify-center space-x-2 cursor-pointer btn-anim shadow-lg">
+                                    <span>Hantar ke Gemini</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="no-print text-center py-3 text-xs text-slate-400 bg-black/40 backdrop-blur-sm border-t border-slate-800">
+        &copy; 2026 E System Cg Fakhrul &bull; SK Bukit Kuang, Kemaman &bull; Dibangunkan oleh <span class="text-amber-400 font-bold">Cortex SKBK Team</span>
+    </footer>
+
+    <script>
+        let currentUserKey = "";
+        let globalNamaGuru = "Cikgu Fakhrul 'Ariffin";
+        let tempJadualList = [];
+        let googleSheetData = [];
+        let filteredSheetData = [];
+        let currentArasPrompt = "sederhana"; // 'sederhana' atau 'sukar'
+        const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyt0qVWC1-144oK3cCB0AjgWh4NXBLi9auHxoCvy5c3uvK5z1rqlIMItih-WoN_IO7pdA/exec";
+
+        const timeSlots = [
+            "07:45", "08:15", "08:45", "09:15", "09:45", 
+            "10:15", "10:45", "11:15", "11:45", "12:15", "12:45", "13:15"
+        ];
+
+        if(!localStorage.getItem('skbk_users')) {
+            const defaultUsers = [{ name: "CIKGU FAKHRUL 'ARIFFIN", username: "admin", password: "123" }];
+            localStorage.setItem('skbk_users', JSON.stringify(defaultUsers));
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            let savedUser = localStorage.getItem('skbk_logged_user');
+            if(savedUser) {
+                let userObj = JSON.parse(savedUser);
+                currentUserKey = userObj.username;
+                globalNamaGuru = userObj.name;
+                document.getElementById('main-menu-section').classList.add('hidden');
+                document.getElementById('welcome-user-title').innerText = "Selamat Datang, " + globalNamaGuru;
+                document.getElementById('sub-menu-section').classList.remove('hidden');
+            }
+            fetchGoogleSheetData();
+        });
+
+        function showLoading(show, text = "Sedang Menyegerakan Data Google Sheet...") {
+            let overlay = document.getElementById('loading-overlay');
+            let txt = document.getElementById('loading-text');
+            if(txt) txt.innerText = text;
+            if(show) {
+                overlay.classList.remove('hidden-loading');
+            } else {
+                overlay.classList.add('hidden-loading');
+            }
+        }
+
+        function fetchGoogleSheetData() {
+            showLoading(true, "Memuat turun data dari Google Sheet...");
+            fetch(SHEET_API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    googleSheetData = data;
+                    showLoading(false);
+                })
+                .catch(err => {
+                    console.error("Gagal memuat data Google Sheet:", err);
+                    showLoading(false);
+                    showNotification("Gagal memuat data dari Google Sheet!", true);
+                });
+        }
+
+        function showNotification(message, isError = false) {
+            let notif = document.getElementById('overlay-notification');
+            let icon = document.getElementById('overlay-icon');
+            let text = document.getElementById('overlay-text');
+
+            text.innerText = message;
+            if(isError) {
+                notif.className = "flex items-center space-x-3 px-4 py-3 rounded-xl shadow-2xl border text-xs sm:text-sm font-bold bg-red-600 text-white border-red-500 show";
+                icon.className = "fa-solid fa-triangle-exclamation text-lg";
+            } else {
+                notif.className = "flex items-center space-x-3 px-4 py-3 rounded-xl shadow-2xl border text-xs sm:text-sm font-bold bg-emerald-600 text-white border-emerald-500 show";
+                icon.className = "fa-solid fa-circle-check text-lg";
+            }
+
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 3000);
+        }
+
+        function tukarKeDaftar() {
+            document.getElementById('login-form-box').classList.add('hidden');
+            document.getElementById('register-form-box').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Sila isi maklumat untuk mendaftar akaun baru.";
+        }
+
+        function tukarKeLogin() {
+            document.getElementById('register-form-box').classList.add('hidden');
+            document.getElementById('login-form-box').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Sila log masuk untuk meneruskan.";
+        }
+
+        function prosesDaftar() {
+            const nama = document.getElementById('reg-nama').value.trim().toUpperCase();
+            const username = document.getElementById('reg-username').value.trim().toLowerCase();
+            const password = document.getElementById('reg-password').value.trim();
+
+            if(!nama || !username || !password) {
+                showNotification("Sila isi semua ruangan pendaftaran!", true);
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('skbk_users'));
+            const wujud = users.find(u => u.username === username);
+            if(wujud) {
+                showNotification("Username telah digunakan!", true);
+                return;
+            }
+
+            users.push({ name: nama, username: username, password: password });
+            localStorage.setItem('skbk_users', JSON.stringify(users));
+
+            showNotification("Pendaftaran berjaya! Sila log masuk.");
+            setTimeout(() => {
+                tukarKeLogin();
+                document.getElementById('login-username').value = username;
+            }, 1200);
+        }
+
+        function prosesLogin() {
+            const username = document.getElementById('login-username').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value.trim();
+            const rememberMe = document.getElementById('login-remember').checked;
+
+            if(!username || !password) {
+                showNotification("Sila masukkan username dan password!", true);
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('skbk_users'));
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if(user) {
+                currentUserKey = user.username;
+                globalNamaGuru = user.name;
+
+                if(rememberMe) {
+                    localStorage.setItem('skbk_logged_user', JSON.stringify({ username: user.username, name: user.name }));
+                }
+
+                document.getElementById('main-menu-section').classList.add('hidden');
+                document.getElementById('welcome-user-title').innerText = "Selamat Datang, " + globalNamaGuru;
+                document.getElementById('sub-menu-section').classList.remove('hidden');
+                showNotification("Log masuk berjaya!");
+            } else {
+                showNotification("Username atau password tidak sah!", true);
+            }
+        }
+
+        function logKeluar() {
+            currentUserKey = "";
+            localStorage.removeItem('skbk_logged_user');
+            document.getElementById('sub-menu-section').classList.add('hidden');
+            document.getElementById('erph-day-selector-section').classList.add('hidden');
+            document.getElementById('rph-workspace-section').classList.add('hidden');
+            document.getElementById('jadual-section').classList.add('hidden');
+            document.getElementById('main-menu-section').classList.remove('hidden');
+            document.getElementById('login-username').value = "";
+            document.getElementById('login-password').value = "";
+            document.getElementById('login-remember').checked = false;
+            showNotification("Anda telah log keluar.");
+        }
+
+        function kembaliKeSubMenu() {
+            document.getElementById('erph-day-selector-section').classList.add('hidden');
+            document.getElementById('rph-workspace-section').classList.add('hidden');
+            document.getElementById('jadual-section').classList.add('hidden');
+            document.getElementById('sub-menu-section').classList.remove('hidden');
+        }
+
+        function bukaJadualWaktu() {
+            document.getElementById('sub-menu-section').classList.add('hidden');
+            document.getElementById('jadual-section').classList.remove('hidden');
+            document.getElementById('jadual-nama-guru').innerText = "Guru: " + globalNamaGuru;
+            muatTurunJadualKeUI();
+            showNotification("Membuka Modul Jadual Waktu");
+        }
+
+        function bukaPilihHariERPH() {
+            let savedJadual = localStorage.getItem('skbk_jadual_' + currentUserKey);
+            if(!savedJadual || JSON.parse(savedJadual).length === 0) {
+                showNotification("Sila masukkan jadual waktu terlebih dahulu!", true);
+                bukaJadualWaktu();
+                return;
+            }
+
+            document.getElementById('sub-menu-section').classList.add('hidden');
+            document.getElementById('rph-workspace-section').classList.add('hidden');
+            document.getElementById('erph-day-selector-section').classList.remove('hidden');
+            showNotification("Sila pilih hari untuk eRPH");
+        }
+
+        function pilihHariRPHAction(hari) {
+            document.getElementById('erph-day-selector-section').classList.add('hidden');
+            document.getElementById('rph-workspace-section').classList.remove('hidden');
+            document.getElementById('badge-erph-hari').innerText = "eRPH : HARI " + hari.toUpperCase();
+            
+            filterSlotBySelectedDay(hari);
+            janaRPHPreview();
+            showNotification("Modul eRPH Hari " + hari + " dibuka");
+        }
+
+        function muatTurunJadualKeUI() {
+            let savedJadual = localStorage.getItem('skbk_jadual_' + currentUserKey);
+            if(savedJadual) {
+                tempJadualList = JSON.parse(savedJadual);
+            } else {
+                tempJadualList = [];
+            }
+            renderMatriksGrid();
+        }
+
+        function renderMatriksGrid() {
+            let tbody = document.getElementById('tabel-matriks-grid');
+            let hariList = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis"];
+            let html = "";
+
+            hariList.forEach(hari => {
+                html += `<tr>`;
+                html += `<td class="border border-slate-300 p-2 font-bold bg-slate-100 text-slate-900">${hari}</td>`;
+
+                for(let i = 0; i < timeSlots.length - 1; i++) {
+                    let slotMula = timeSlots[i];
+                    let slotTamat = timeSlots[i+1];
+
+                    let matchedItem = tempJadualList.find(item => item.hari === hari && item.mula <= slotMula && item.tamat >= slotTamat);
+
+                    if(matchedItem) {
+                        let originalIndex = tempJadualList.findIndex(x => x === matchedItem);
+                        let tahunAngka = matchedItem.tahun ? matchedItem.tahun.toString().replace(/\D/g, "") : "";
+                        html += `
+                            <td class="border border-slate-300 p-1.5 bg-blue-50 text-slate-900 relative group">
+                                <div class="font-black text-blue-900 text-[11px]">${matchedItem.subjek}</div>
+                                <div class="text-[10px] text-slate-600">${matchedItem.kelas} (${tahunAngka})</div>
+                                <button type="button" onclick="padamSlotJadual(${originalIndex})" class="absolute top-1 right-1 text-red-600 hover:text-red-800 text-xs px-1 cursor-pointer" title="Padam"><i class="fa-solid fa-xmark"></i></button>
+                            </td>
+                        `;
+                    } else {
+                        html += `<td class="border border-slate-300 p-2 text-slate-300">-</td>`;
+                    }
+                }
+                html += `</tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function tambahSlotJadual() {
+            let hari = document.getElementById('input-j-hari').value;
+            let mula = document.getElementById('input-j-mula').value;
+            let tamat = document.getElementById('input-j-tamat').value;
+            let subjek = document.getElementById('input-j-subjek').value;
+            let kelas = document.getElementById('input-j-kelas').value;
+            let tahun = document.getElementById('input-j-tahun').value;
+
+            if(mula >= tamat) {
+                showNotification("Masa tamat mesti lewat daripada masa mula!", true);
+                return;
+            }
+
+            let conflict = tempJadualList.some(item => {
+                if(item.hari !== hari) return false;
+                return (mula < item.tamat && tamat > item.mula);
+            });
+
+            if(conflict) {
+                showNotification("Ralat: Slot masa bertindih pada hari " + hari + "!", true);
+                return;
+            }
+
+            tempJadualList.push({ hari, mula, tamat, subjek, kelas, tahun });
+            renderMatriksGrid();
+            showNotification("Slot jadual berjaya ditambah.");
+        }
+
+        function padamSlotJadual(index) {
+            tempJadualList.splice(index, 1);
+            renderMatriksGrid();
+            showNotification("Slot jadual telah dipadam.");
+        }
+
+        function hantarJadualKeSistem() {
+            if(tempJadualList.length === 0) {
+                showNotification("Sila masukkan sekurang-kurangnya satu slot jadual!", true);
+                return;
+            }
+
+            localStorage.setItem('skbk_jadual_' + currentUserKey, JSON.stringify(tempJadualList));
+            showNotification("Jadual waktu berjaya diselaraskan ke sistem eRPH!");
+        }
+
+        function padamJadualSepenuhnya() {
+            if(confirm("Adakah anda pasti ingin memadam/reset sepenuhnya jadual waktu ini?")) {
+                localStorage.removeItem('skbk_jadual_' + currentUserKey);
+                tempJadualList = [];
+                renderMatriksGrid();
+                showNotification("Jadual waktu telah dipadam sepenuhnya.", true);
+            }
+        }
+
+        function filterSlotBySelectedDay(hari) {
+            let savedJadual = JSON.parse(localStorage.getItem('skbk_jadual_' + currentUserKey)) || [];
+            let filtered = savedJadual.filter(item => item.hari === hari);
+
+            let selSync = document.getElementById('select-slot-sync');
+            selSync.innerHTML = '<option value="">-- Pilih Slot Jadual (' + hari + ') --</option>';
+            
+            filtered.forEach((item) => {
+                let realIndex = savedJadual.findIndex(x => x === item);
+                let tahunAngka = item.tahun ? item.tahun.toString().replace(/\D/g, "") : "";
+                let opt = document.createElement('option');
+                opt.value = realIndex;
+                opt.textContent = `${item.mula}-${item.tamat} : ${item.subjek} - ${item.kelas} (${tahunAngka})`;
+                selSync.appendChild(opt);
+            });
+
+            if(filtered.length === 0) {
+                document.getElementById('input-mapel').value = "";
+                document.getElementById('input-kelas-nama').value = "";
+                document.getElementById('input-tahun').value = "";
+                showNotification("Tiada slot jadual direkodkan pada hari " + hari, true);
+            } else {
+                selSync.value = savedJadual.findIndex(x => x === filtered[0]);
+                pilihSlotJadualKeRPH();
+            }
+        }
+
+        function pilihSlotJadualKeRPH() {
+            let idx = document.getElementById('select-slot-sync').value;
+            if(idx === "") return;
+
+            let savedJadual = JSON.parse(localStorage.getItem('skbk_jadual_' + currentUserKey));
+            let slotInfo = savedJadual[idx];
+
+            if(slotInfo) {
+                let tahunAngka = slotInfo.tahun ? slotInfo.tahun.toString().replace(/\D/g, "") : "";
+                document.getElementById('input-mapel').value = slotInfo.subjek;
+                document.getElementById('input-kelas-nama').value = slotInfo.kelas;
+                document.getElementById('input-tahun').value = tahunAngka;
+                document.getElementById('input-masa-mula').value = slotInfo.mula;
+                document.getElementById('input-masa-tamat').value = slotInfo.tamat;
+
+                filterAndPopulateSheetDropdowns(slotInfo.subjek, tahunAngka);
+                janaRPHPreview();
+            }
+        }
+
+        function filterAndPopulateSheetDropdowns(subjek, tahun) {
+            showLoading(true, "Menyelaras Kurikulum Google Sheet...");
+            setTimeout(() => {
+                let cleanSlotTahun = tahun ? tahun.toString().replace(/\D/g, "") : "";
+
+                filteredSheetData = googleSheetData.filter(row => {
+                    let sheetSubjek = row.SUBJEK ? row.SUBJEK.toLowerCase().trim() : "";
+                    let sheetTahun = row.TAHUN ? row.TAHUN.toString().toLowerCase().trim() : "";
+                    let cleanSheetTahun = sheetTahun.replace(/\D/g, "");
+
+                    let sMatch = sheetSubjek === subjek.toLowerCase().trim();
+                    let tMatch = (sheetTahun === tahun.toLowerCase().trim()) || (cleanSlotTahun !== "" && cleanSheetTahun === cleanSlotTahun);
+                    
+                    return sMatch && tMatch;
+                });
+
+                let selTajuk = document.getElementById('select-sheet-tajuk');
+                let selSK = document.getElementById('select-sheet-sk');
+                let selSP = document.getElementById('select-sheet-sp');
+
+                selTajuk.innerHTML = '<option value="">-- Sila Pilih Tajuk --</option>';
+                selSK.innerHTML = '<option value="">-- Sila Pilih Standard Kandungan --</option>';
+                selSP.innerHTML = '<option value="">-- Sila Pilih Standard Pembelajaran --</option>';
+
+                let uniqueTajuk = [...new Set(filteredSheetData.map(r => r.TAJUK).filter(Boolean))];
+                uniqueTajuk.forEach(t => {
+                    let opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    selTajuk.appendChild(opt);
+                });
+
+                showLoading(false);
+                if(filteredSheetData.length === 0) {
+                    showNotification("Tiada data Google Sheet sepadan untuk " + subjek + " (" + tahun + ").", true);
+                } else {
+                    showNotification("Data Kurikulum Berjaya Diselaras (" + filteredSheetData.length + " rekod)");
+                }
+                janaRPHPreview();
+            }, 100);
+        }
+
+        function pilihTajukDariSheet() {
+            let selectedTajuk = document.getElementById('select-sheet-tajuk').value;
+            let selSK = document.getElementById('select-sheet-sk');
+            
+            selSK.innerHTML = '<option value="">-- Sila Pilih Standard Kandungan --</option>';
+            document.getElementById('select-sheet-sp').innerHTML = '<option value="">-- Sila Pilih Standard Pembelajaran --</option>';
+
+            if(!selectedTajuk) {
+                janaRPHPreview();
+                return;
+            }
+
+            let matchingRows = filteredSheetData.filter(r => r.TAJUK && r.TAJUK.toString().trim() === selectedTajuk.toString().trim());
+            let uniqueSK = [...new Set(matchingRows.map(r => r.SK).filter(Boolean))];
+
+            uniqueSK.forEach(sk => {
+                let opt = document.createElement('option');
+                opt.value = sk;
+                opt.textContent = sk;
+                selSK.appendChild(opt);
+            });
+
+            janaRPHPreview();
+        }
+
+        function pilihSKDariSheet() {
+            let selectedTajuk = document.getElementById('select-sheet-tajuk').value;
+            let selectedSK = document.getElementById('select-sheet-sk').value;
+            let selSP = document.getElementById('select-sheet-sp');
+
+            selSP.innerHTML = '<option value="">-- Sila Pilih Standard Pembelajaran --</option>';
+
+            if(!selectedSK) {
+                janaRPHPreview();
+                return;
+            }
+
+            let matchingRows = filteredSheetData.filter(r => 
+                r.TAJUK && r.TAJUK.toString().trim() === selectedTajuk.toString().trim() && 
+                r.SK && r.SK.toString().trim() === selectedSK.toString().trim()
+            );
+            
+            let uniqueSP = [...new Set(matchingRows.map(r => r.SP).filter(Boolean))];
+
+            uniqueSP.forEach(sp => {
+                let opt = document.createElement('option');
+                opt.value = sp;
+                opt.textContent = sp;
+                selSP.appendChild(opt);
+            });
+
+            janaRPHPreview();
+        }
+
+        function pilihSPDariSheet() {
+            janaRPHPreview();
+        }
+
+        function resetDataERPH() {
+            if(confirm("Adakah anda ingin mereset data eRPH/jadual?")) {
+                localStorage.removeItem('skbk_jadual_' + currentUserKey);
+                showNotification("Data eRPH telah direset.", true);
+                kembaliKeSubMenu();
+            }
+        }
+
+        function setArasPrompt(aras) {
+            currentArasPrompt = aras;
+            let btnSed = document.getElementById('btn-aras-sederhana');
+            let btnSuk = document.getElementById('btn-aras-sukar');
+
+            if(aras === 'sederhana') {
+                btnSed.className = "px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-amber-500 text-slate-950";
+                btnSuk.className = "px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-slate-800 text-slate-300 hover:bg-slate-700";
+            } else {
+                btnSuk.className = "px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-amber-500 text-slate-950";
+                btnSed.className = "px-2.5 py-1 rounded-lg font-bold transition cursor-pointer bg-slate-800 text-slate-300 hover:bg-slate-700";
+            }
+            janaRPHPreview();
+        }
+
+        function janaRPHPreview() {
+            const mapel = document.getElementById('input-mapel').value || "-";
+            const kelasNama = document.getElementById('input-kelas-nama').value || "-";
+            const tahun = document.getElementById('input-tahun').value || "3";
+            const kelasGabung = tahun + ' ' + kelasNama;
+            
+            const tarikhRaw = document.getElementById('input-tarikh').value;
+            let tarikhFormatted = tarikhRaw;
+            if(tarikhRaw) {
+                const parts = tarikhRaw.split('-');
+                if(parts.length === 3) {
+                    tarikhFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+
+            const masaMula = document.getElementById('input-masa-mula').value;
+            const masaTamat = document.getElementById('input-masa-tamat').value;
+            const bilMurid = document.getElementById('input-bil-murid').value;
+            
+            const tema = document.getElementById('select-sheet-tajuk').value || "-";
+            const sk = document.getElementById('select-sheet-sk').value || "-";
+            const sp = document.getElementById('select-sheet-sp').value || "-";
+
+            const objektif = document.getElementById('input-objektif').value;
+            const kk = document.getElementById('input-kk').value;
+            const aktiviti = document.getElementById('input-aktiviti').value;
+            const refleksi = document.getElementById('input-refleksi').value;
+            const intervensi = document.getElementById('input-intervensi').value;
+
+            document.getElementById('display-nama-guru').innerText = "Guru: " + globalNamaGuru;
+            document.getElementById('val-mapel').innerText = mapel;
+            document.getElementById('val-kelas').innerText = kelasGabung;
+            document.getElementById('val-tahun').innerText = tahun;
+            document.getElementById('val-tarikh').innerText = tarikhFormatted;
+            document.getElementById('val-masa').innerText = masaMula;
+            document.getElementById('val-hingga').innerText = masaTamat;
+            document.getElementById('val-bil-murid').innerText = bilMurid;
+            document.getElementById('val-tema').innerText = tema;
+            document.getElementById('val-sk').innerText = sk;
+            document.getElementById('val-sp').innerText = sp;
+            document.getElementById('val-objektif').innerText = objektif;
+            document.getElementById('val-kk').innerText = kk;
+            document.getElementById('val-aktiviti').innerText = aktiviti;
+            document.getElementById('val-refleksi').innerText = refleksi;
+            document.getElementById('val-intervensi').innerText = intervensi;
+
+            // Kumpul Prompt AI Automatik
+            let kbatText = (currentArasPrompt === 'sukar') ? "Aras Sukar merangkumi Kemahiran Berfikir Aras Tinggi (KBAT)" : "Aras Sederhana";
+            let aiPromptStr = `Tolong sediakan draf pengisian Rancangan Pengajaran Harian (RPH) bagi maklumat berikut:
+- Subjek: ${mapel}
+- Kelas: ${kelasGabung}
+- Tahun: ${tahun}
+- Masa: ${masaMula} hingga ${masaTamat}
+- Bilangan Murid: ${bilMurid} orang
+- Tajuk: ${tema}
+- Standard Kandungan (SK): ${sk}
+- Standard Pembelajaran (SP): ${sp}
+- Aras: ${kbatText}
+
+Sila lengkapkan elemen berikut dengan teratur dan profesional:
+1. OBJEKTIF PEMBELAJARAN
+2. KRITERIA KEJAYAAN
+3. AKTIVITI (Ringkasan / Catatan Aktiviti PdP)
+4. REFLEKSI
+5. INTERVENSI`;
+
+            document.getElementById('ai-prompt-output').value = aiPromptStr;
+        }
+
+        function salinPromptAI() {
+            let promptBox = document.getElementById('ai-prompt-output');
+            promptBox.select();
+            promptBox.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(promptBox.value).then(() => {
+                showNotification("Prompt AI berjaya disalin ke papan klip!");
+            }).catch(err => {
+                showNotification("Gagal menyalin prompt.", true);
+            });
+        }
+
+        function hantarKeGeminiAI() {
+            let promptText = document.getElementById('ai-prompt-output').value;
+            let encodedPrompt = encodeURIComponent(promptText);
+            let geminiUrl = `https://gemini.google.com/app?q=${encodedPrompt}`;
+            window.open(geminiUrl, '_blank');
+            showNotification("Membuka Google Gemini beserta prompt RPH!");
+        }
+
+        function muatTurunRPHPDF() {
+            const element = document.getElementById('print-area');
+            const kelas = document.getElementById('input-kelas-nama').value.replace(/\s+/g, '_') || "Kelas";
+            const tahun = document.getElementById('input-tahun').value.replace(/\s+/g, '_');
+
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                showNotification("Pustaka PDF belum dimuat sepenuhnya.", true);
+                return;
+            }
+
+            showLoading(true, "Menjana Fail PDF...");
+            html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                const imgWidth = 190;
+                const pageHeight = 295;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 10;
+
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save(`RPH_Tahun_${tahun}_${kelas}.pdf`);
+                showLoading(false);
+                showNotification("PDF berjaya dimuat turun!");
+            }).catch(err => {
+                console.error(err);
+                showLoading(false);
+                showNotification("Gagal menjana PDF RPH.", true);
+            });
+        }
+
+        function muatTurunRPHPNG() {
+            const element = document.getElementById('print-area');
+            const kelas = document.getElementById('input-kelas-nama').value.replace(/\s+/g, '_') || "Kelas";
+            const tahun = document.getElementById('input-tahun').value.replace(/\s+/g, '_');
+
+            if (typeof html2canvas === 'undefined') {
+                showNotification("Pustaka Imej belum dimuat sepenuhnya.", true);
+                return;
+            }
+
+            showLoading(true, "Menjana Fail PNG...");
+            html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `RPH_Tahun_${tahun}_${kelas}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showLoading(false);
+                showNotification("Imej PNG berjaya dimuat turun!");
+            }).catch(err => {
+                console.error(err);
+                showLoading(false);
+                showNotification("Gagal menjana PNG RPH.", true);
+            });
+        }
+    </script>
+</body>
+</html>
