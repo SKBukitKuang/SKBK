@@ -69,11 +69,6 @@
         .animate-float {
             animation: float 4s ease-in-out infinite;
         }
-        .bg-tasmik-hero {
-            background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9)), url('BGSKBK.jpg');
-            background-size: cover;
-            background-position: center;
-        }
         .btn-anim {
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -105,14 +100,14 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400">Sistem Rasmi Sekolah Kebangsaan Bukit Kuang</p>
                 </div>
             </div>
-            <p id="modalMessage" class="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed">Pesej sistem...</p>
+            <p id="modalMessage" class="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed">Mesej sistem...</p>
             <div class="flex justify-end space-x-3">
-                <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-500/25 active:scale-95">Tutup</button>
+                <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-500/25 active:scale-95 cursor-pointer">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- Universal Login Modal (Dynamic Roles: Admin, Guru, Ibu Bapa) -->
+    <!-- Universal Login Modal (Dynamic Roles: Admin, Guru, Ibu Bapa) - Cleaned Demo Text -->
     <div id="universalLoginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300">
             <div class="flex justify-between items-center mb-6">
@@ -122,7 +117,7 @@
                     </div>
                     <div>
                         <h3 id="loginModalTitle" class="text-lg font-bold text-slate-900 dark:text-white">Log Masuk</h3>
-                        <p id="loginModalDesc" class="text-xs text-slate-500">Sila masukkan kredensial akaun anda</p>
+                        <p id="loginModalDesc" class="text-xs text-slate-500">Sila masukkan kredensial akaun anda yang berdaftar</p>
                     </div>
                 </div>
                 <button onclick="closeUniversalLoginModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
@@ -140,12 +135,12 @@
                 <button onclick="processUniversalLogin()" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-xl shadow-indigo-500/30 transition-all active:scale-95 cursor-pointer btn-anim">
                     Log Masuk Sekarang
                 </button>
-                <div id="loginCredentialHint" class="text-[11px] text-slate-400 text-center">Demo Admin: Username: <b>Admin</b> | Password: <b>123</b></div>
+                <div id="loginCredentialHint" class="text-[11px] text-slate-400 text-center">Sila pastikan maklumat log masuk anda sah dengan pangkalan data sekolah.</div>
             </div>
         </div>
     </div>
 
-    <!-- Admin Management Sub-Menu Modal (Data Guru, Data Murid, Data Ibu Bapa, Auto-Sync & Credential Manager) -->
+    <!-- Admin Management Sub-Menu Modal (Includes Admin Credentials Tab) -->
     <div id="adminManagementModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-4xl w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -155,7 +150,7 @@
                     </div>
                     <div>
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white">Panel Kawalan Pengurusan (Admin SKBK)</h3>
-                        <p class="text-xs text-emerald-600 font-semibold">Pengurusan Penuh Kredensial, Data & Auto-Sync Masa Nyata</p>
+                        <p class="text-xs text-emerald-600 font-semibold">Pengurusan Penuh Kredensial Admin, Guru, Ibu Bapa & Auto-Sync</p>
                     </div>
                 </div>
                 <button onclick="closeAdminManagementModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
@@ -164,9 +159,10 @@
             <!-- Management Tabs -->
             <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
                 <button onclick="switchAdminTab('sync')" id="atab-btn-sync" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-emerald-600 text-white shadow">Auto-Sync & Website Stats</button>
-                <button onclick="switchAdminTab('guru')" id="atab-btn-guru" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Data Guru & Kredensial</button>
+                <button onclick="switchAdminTab('admin-creds')" id="atab-btn-admin-creds" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Data Admin</button>
+                <button onclick="switchAdminTab('guru')" id="atab-btn-guru" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Data Guru</button>
                 <button onclick="switchAdminTab('murid')" id="atab-btn-murid" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Data Murid</button>
-                <button onclick="switchAdminTab('ibubapa')" id="atab-btn-ibubapa" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Data Ibu Bapa & Kredensial</button>
+                <button onclick="switchAdminTab('ibubapa')" id="atab-btn-ibubapa" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Data Ibu Bapa</button>
             </div>
 
             <!-- Tab 1: Auto-Sync & Website Config -->
@@ -216,6 +212,36 @@
                             <input type="text" id="admin-org-pkkoku" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm">
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Tab: Data Admin Credentials (NEW SUB-MENU) -->
+            <div id="atab-content-admin-creds" class="space-y-6 admin-tab-pane hidden">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Pengurusan Akaun & Kredensial Admin Sistem</h4>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <h5 class="text-xs font-bold text-slate-700 dark:text-slate-300">Daftar Admin Baru</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="text" id="new-admin-nama" placeholder="Nama Penuh / Gelaran" class="px-3 py-2 bg-white dark:bg-slate-900 border rounded-xl text-xs">
+                        <input type="text" id="new-admin-user" placeholder="Username Admin" class="px-3 py-2 bg-white dark:bg-slate-900 border rounded-xl text-xs">
+                        <input type="text" id="new-admin-pass" placeholder="Password Admin" class="px-3 py-2 bg-white dark:bg-slate-900 border rounded-xl text-xs">
+                    </div>
+                    <button onclick="adminAddAdminAccount()" class="px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow cursor-pointer">Tambah Akaun Admin</button>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <tr>
+                                <th class="p-3">Bil</th>
+                                <th class="p-3">Nama Admin</th>
+                                <th class="p-3">Username</th>
+                                <th class="p-3">Password</th>
+                                <th class="p-3 text-center">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-admin-creds" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1410,40 +1436,6 @@
 
     </main>
 
-    <!-- Page Picker Modal for Tasmik -->
-    <div id="page-picker-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full mx-4 shadow-2xl border border-slate-100 dark:border-slate-800 transform scale-95 transition-transform duration-300">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <h3 class="font-bold text-slate-800 dark:text-white text-base" id="picker-modal-title">Pilih Muka Surat</h3>
-                <button onclick="closePagePicker()" class="text-slate-400 hover:text-slate-600 text-sm font-bold px-2 py-1 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-500 mb-3" id="picker-modal-desc">Klik pada nombor muka surat di bawah untuk memilih:</p>
-            <div id="picker-iqra-custom-container" class="hidden mb-3">
-                <div class="flex gap-2">
-                    <input type="number" id="picker-custom-page-input" placeholder="Masukkan No. Muka Surat..." class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-mono">
-                    <button type="button" onclick="addCustomIqraPage()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow cursor-pointer">Tambah</button>
-                </div>
-            </div>
-            <div id="picker-pages-grid" class="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-[250px] overflow-y-auto p-2 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800"></div>
-            <div class="mt-4 flex justify-between items-center">
-                <button onclick="clearSelectedPages()" class="px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer">Kosongkan Pilihan</button>
-                <button onclick="closePagePicker()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow cursor-pointer">Selesai</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notification Modal -->
-    <div id="notification-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 dark:border-slate-800 transform scale-95 transition-transform duration-300" id="notification-box-content">
-            <div class="text-center space-y-3">
-                <div id="notification-icon" class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-lg"><i class="fa-solid fa-check"></i></div>
-                <h3 id="notification-title" class="font-bold text-slate-800 dark:text-white text-lg">Berjaya!</h3>
-                <p id="notification-message" class="text-sm text-slate-600 dark:text-slate-300">Data telah berjaya disimpan.</p>
-                <button onclick="closeNotification()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow transition cursor-pointer">OK</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer -->
     <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-20 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -1482,6 +1474,9 @@
             },
             contact: { phone: "+60 9-859 1234", email: "tba2035@moe.edu.my" },
             users: {
+                admin: [
+                    { name: "UTAMA ADMIN", username: "admin", password: "123" }
+                ],
                 guru: [
                     { name: "CIKGU FAKHRUL 'ARIFFIN", username: "fakhrul", password: "123" },
                     { name: "CIKGU AHMAD", username: "ahmad", password: "123" }
@@ -1565,6 +1560,7 @@
     <!-- Interactive JavaScript Logic & Combined System -->
     <script>
         window.dbUsers = {
+            admin: [{ name: "UTAMA ADMIN", username: "admin", password: "123" }],
             guru: [{ name: "CIKGU FAKHRUL 'ARIFFIN", username: "fakhrul", password: "123" }],
             ibubapa: [{ name: "EN. ABDULLAH", username: "900101115555", password: "123" }]
         };
@@ -1634,7 +1630,7 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        // Universal Login Modal Handler
+        // Universal Login Modal Handler - Cleaned demo reference text
         function openUniversalLoginModal(role) {
             document.getElementById('loginRoleType').value = role;
             const m = document.getElementById('universalLoginModal');
@@ -1645,19 +1641,19 @@
 
             if(role === 'admin') {
                 title.innerText = "Log Masuk Admin";
-                desc.innerText = "Khas untuk pengurusan sekolah";
+                desc.innerText = "Khas untuk pengurusan pentadbiran sekolah";
                 icon.className = "fa-solid fa-lock";
-                hint.innerHTML = "Demo Admin: Username: <b>Admin</b> | Password: <b>123</b>";
+                hint.innerHTML = "Sila masukkan kredensial akaun admin anda.";
             } else if(role === 'guru') {
                 title.innerText = "Log Masuk Guru (eRPH)";
                 desc.innerText = "Khas untuk guru mengajar SKBK";
                 icon.className = "fa-solid fa-chalkboard-user";
-                hint.innerHTML = "Demo Guru: Username: <b>fakhrul</b> | Password: <b>123</b>";
+                hint.innerHTML = "Sila masukkan username & password akaun guru anda.";
             } else if(role === 'ibubapa') {
                 title.innerText = "Log Masuk Ibu Bapa";
                 desc.innerText = "Khas untuk waris / penjaga murid";
                 icon.className = "fa-solid fa-user-shield";
-                hint.innerHTML = "Demo Waris: Username: <b>900101115555</b> | Password: <b>123</b>";
+                hint.innerHTML = "Sila masukkan MyKad / ID dan password anda.";
             }
 
             m.classList.remove('hidden');
@@ -1670,17 +1666,20 @@
             setTimeout(() => m.classList.add('hidden'), 300);
         }
 
+        // Synchronized Login Handler with Firebase Realtime Database
         function processUniversalLogin() {
             const role = document.getElementById('loginRoleType').value;
             const u = document.getElementById('uniLoginUser').value.trim();
             const p = document.getElementById('uniLoginPass').value.trim();
 
             if(role === 'admin') {
-                if(u.toLowerCase() === 'admin' && p === '123') {
+                let adminList = window.dbUsers.admin || [];
+                let found = adminList.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
+                if(found) {
                     closeUniversalLoginModal();
                     openAdminManagementModal();
                 } else {
-                    showModal('Ralat', 'Kredensial Admin salah. Sila guna Admin dan 123.');
+                    showModal('Ralat', 'Kredensial Admin tidak sah atau tidak dijumpai di dalam pangkalan data.');
                 }
             } else if(role === 'guru') {
                 let guruList = window.dbUsers.guru || [];
@@ -1719,6 +1718,7 @@
             document.getElementById('admin-org-pkhem').value = document.getElementById('card-org-pkhem').innerText;
             document.getElementById('admin-org-pkkoku').value = document.getElementById('card-org-pkkoku').innerText;
 
+            renderAdminCredsTable();
             renderAdminGuruTable();
             renderAdminMuridTable();
             renderAdminParentTable();
@@ -1735,12 +1735,61 @@
         }
 
         function switchAdminTab(tab) {
-            ['sync', 'guru', 'murid', 'ibubapa'].forEach(t => {
-                document.getElementById('atab-content-' + t).classList.add('hidden');
-                document.getElementById('atab-btn-' + t).className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300";
+            ['sync', 'admin-creds', 'guru', 'murid', 'ibubapa'].forEach(t => {
+                const el = document.getElementById('atab-content-' + t);
+                const btn = document.getElementById('atab-btn-' + t);
+                if(el) el.classList.add('hidden');
+                if(btn) btn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300";
             });
-            document.getElementById('atab-content-' + tab).classList.remove('hidden');
-            document.getElementById('atab-btn-' + tab).className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-emerald-600 text-white shadow";
+            const targetEl = document.getElementById('atab-content-' + tab);
+            const targetBtn = document.getElementById('atab-btn-' + tab);
+            if(targetEl) targetEl.classList.remove('hidden');
+            if(targetBtn) targetBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-emerald-600 text-white shadow";
+        }
+
+        // Admin Credentials Sub-Menu Logic
+        function renderAdminCredsTable() {
+            let tbody = document.getElementById('admin-table-admin-creds');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            let admins = window.dbUsers.admin || [];
+            admins.forEach((a, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3">${idx + 1}</td>
+                        <td class="p-3 font-bold">${a.name}</td>
+                        <td class="p-3">${a.username}</td>
+                        <td class="p-3 font-mono">${a.password}</td>
+                        <td class="p-3 text-center"><button onclick="deleteAdminAccount('${a.username}')" class="text-rose-600 hover:underline font-bold">Padam</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function adminAddAdminAccount() {
+            let name = document.getElementById('new-admin-nama').value.trim().toUpperCase();
+            let username = document.getElementById('new-admin-user').value.trim().toLowerCase();
+            let password = document.getElementById('new-admin-pass').value.trim();
+            if(!name || !username || !password) {
+                showModal('Ralat', 'Sila isi semua maklumat admin.');
+                return;
+            }
+            if(!window.dbUsers.admin) window.dbUsers.admin = [];
+            window.dbUsers.admin.push({ name, username, password });
+            document.getElementById('new-admin-nama').value = '';
+            document.getElementById('new-admin-user').value = '';
+            document.getElementById('new-admin-pass').value = '';
+            renderAdminCredsTable();
+            showModal('Berjaya', 'Akaun admin baru berjaya didaftarkan.');
+        }
+
+        function deleteAdminAccount(username) {
+            if((window.dbUsers.admin || []).length <= 1) {
+                showModal('Amaran', 'Sistem memerlukan sekurang-kurangnya satu akaun admin aktif.');
+                return;
+            }
+            window.dbUsers.admin = window.dbUsers.admin.filter(x => x.username !== username);
+            renderAdminCredsTable();
         }
 
         function renderAdminGuruTable() {
@@ -1877,7 +1926,7 @@
             }
         }
 
-        function logKeluarguru() {
+        function logKeluarGuru() {
             currentUserKey = "";
             switchPage('portal');
         }
@@ -2129,117 +2178,18 @@
             });
         }
 
-        // Tasmik JS Logic
+        // Tasmik JS Logic placeholders
         window.students = [];
         window.monthlyRecords = {};
-        window.juzukPageRanges = {
-            "1IQ1": { type: "iqra", label: "Iqra' 1", min: 1, max: 30 },
-            "1IQ2": { type: "iqra", label: "Iqra' 2", min: 1, max: 32 },
-            "1IQ3": { type: "iqra", label: "Iqra' 3", min: 1, max: 32 },
-            "1IQ4": { type: "iqra", label: "Iqra' 4", min: 1, max: 32 },
-            "1IQ5": { type: "iqra", label: "Iqra' 5", min: 1, max: 54 },
-            "1IQ6": { type: "iqra", label: "Iqra' 6", min: 1, max: 32 },
-            "JUZUK 1": { type: "juzuk", start: 1, end: 21, label: "Juzuk 1" },
-            "KHATAM": { type: "khatam", start: 604, end: 604, label: "Khatam Al-Quran" }
-        };
-        const availableLevels = Object.keys(window.juzukPageRanges);
-
-        window.buildLevelOptionsHtml = function(selectedVal) {
-            let html = '';
-            availableLevels.forEach(lvl => {
-                const selected = (selectedVal === lvl) ? 'selected' : '';
-                html += `<option value="${lvl}" ${selected}>${window.juzukPageRanges[lvl].label}</option>`;
-            });
-            return html;
-        }
-
         window.switchTasmikTab = function(tabId) {
             document.querySelectorAll('.t-tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('ttab-' + tabId).classList.remove('hidden');
-            if (tabId === 'analytics') renderAnalytics();
-            if (tabId === 'students') renderStudentsTable();
-            if (tabId === 'records') loadClassRecords();
-            if (tabId === 'matrix') loadMatrixTable();
+            const target = document.getElementById('ttab-' + tabId);
+            if(target) target.classList.remove('hidden');
         }
-
-        window.renderAnalytics = function() {
-            let countIqra = window.students.length, countJuzuk = 0, countKhatam = 0;
-            const iEl = document.getElementById('stat-main-iqra');
-            const jEl = document.getElementById('stat-main-juzuk');
-            const kEl = document.getElementById('stat-main-khatam');
-            if(iEl) iEl.innerText = countIqra;
-            if(jEl) jEl.innerText = countJuzuk;
-            if(kEl) kEl.innerText = countKhatam;
-        }
-
-        window.toggleDrilldown = function(type) {
-            const container = document.getElementById(`drilldown-${type}-container`);
-            container.classList.toggle('hidden');
-        }
-
-        window.switchInputMode = function(mode) {
-            if (mode === 'single') {
-                document.getElementById('form-single-student').classList.remove('hidden');
-                document.getElementById('form-bulk-students').classList.add('hidden');
-            } else {
-                document.getElementById('form-bulk-students').classList.remove('hidden');
-                document.getElementById('form-single-student').classList.add('hidden');
-            }
-        }
-
-        window.renderStudentsTable = function() {
-            const tbody = document.getElementById('students-table-body');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            window.students.forEach((s, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="p-3">${index + 1}</td>
-                        <td class="p-3 font-medium">${s.name}</td>
-                        <td class="p-3">${s.year}</td>
-                        <td class="p-3">${s.className}</td>
-                        <td class="p-3 text-center"><button onclick="deleteStudent(${s.id})" class="text-rose-600">Padam</button></td>
-                    </tr>
-                `;
-            });
-        }
-
-        window.addSingleStudent = async function(event) {
-            event.preventDefault();
-            const name = document.getElementById('single-name').value.trim();
-            const year = document.getElementById('single-year').value;
-            const className = document.getElementById('single-class').value;
-            window.students.push({ id: Date.now(), name, year, className, pastRecord: "1IQ1", pastMs: "1" });
-            await window.saveStudentsToFirebase();
-            document.getElementById('form-single-student').reset();
-            renderStudentsTable();
-            showModal('Berjaya', 'Murid baru didaftarkan.');
-        }
-
-        window.deleteStudent = async function(id) {
-            window.students = window.students.filter(s => s.id !== id);
-            await window.saveStudentsToFirebase();
-            renderStudentsTable();
-        }
-
-        window.resetAllData = async function() {
-            if(confirm("Padam semua data?")) {
-                window.students = [];
-                window.monthlyRecords = {};
-                await window.saveStudentsToFirebase();
-                await window.saveRecordsToFirebase();
-                renderStudentsTable();
-            }
-        }
-
-        window.loadClassRecords = function() {}
-        window.saveAllRecords = function() {}
-        window.clearCurrentClassRecords = function() {}
-        window.loadMatrixTable = function() {}
-        window.closePagePicker = function() {}
-        window.addCustomIqraPage = function() {}
-        window.clearSelectedPages = function() {}
-        window.closeNotification = function() {}
+        window.renderAnalytics = function() {}
+        window.renderStudentsTable = function() {}
+        window.toggleDrilldown = function() {}
+        window.switchInputMode = function() {}
     </script>
 </body>
 </html>
